@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<otrs_config version="1.0" init="Application">
+    <CVS>$Id: InstanceAsRepository.xml,v 1.12 2008/03/10 12:57:42 mh Exp $</CVS>
+    <ConfigItem Name="Frontend::Module###AdminInstanceAsRepository" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the repository packages interface.</Description>
+        <Group>InstanceAsRepository</Group>
+        <SubGroup>Frontend::Admin::ModuleRegistration</SubGroup>
+        <Setting>
+            <FrontendModuleReg>
+                <Group>admin</Group>
+                <Description>Manage packages of this repository.</Description>
+                <Title>Instance as Repository</Title>
+                <NavBarName>Admin</NavBarName>
+                <NavBarModule>
+                    <Module>Kernel::Output::HTML::NavBarModuleAdmin</Module>
+                    <Name Translatable="1">Repository Packages</Name>
+                    <Description Translatable="1">Manage packages of this repository.</Description>
+                    <Block>System</Block>
+                    <Prio>1100</Prio>
+                </NavBarModule>
+            </FrontendModuleReg>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="PublicFrontend::Module###PublicInstanceAsRepository" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the public repository.</Description>
+        <Group>InstanceAsRepository</Group>
+        <SubGroup>Frontend::Public::ModuleRegistration</SubGroup>
+        <Setting>
+            <FrontendModuleReg>
+                <Description>Public repository</Description>
+                <NavBarName></NavBarName>
+                <Title>Public repository</Title>
+            </FrontendModuleReg>
+        </Setting>
+    </ConfigItem>
+    <ConfigItem Name="Package::RepositoryAccessIPs" Required="0" Valid="0">
+        <Description Translatable="1">.</Description>
+        <Group>InstanceAsRepository</Group>
+        <SubGroup>Core</SubGroup>
+        <Setting>
+            <Array>
+                <Item>127.0.0.1</Item>
+            </Array>
+        </Setting>
+    </ConfigItem>
+</otrs_config>

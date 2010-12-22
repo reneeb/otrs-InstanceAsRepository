@@ -1,0 +1,69 @@
+# --
+# AdminInstanceAsRepository.dtl - provides HTML form for AdminInstanceAsRepository
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: AdminInstanceAsRepository.dtl,v 1.21 2010/08/11 10:56:29 mg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1>$Text{"Repository Management"}</h1>
+    <div class="SidebarColumn">
+    </div>
+
+    <div class="ContentColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>$Text{"List"}</h2>
+            </div>
+            <div class="Content">
+                <table class="DataTable" id="Packages">
+                    <thead>
+                        <tr>
+                            <th>$Text{"Package Name"}</th>
+                            <th>$Text{"Version"}</th>
+                            <th>$Text{"Description"}</th>
+                            <th>$Text{"Action"}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+<!-- dtl:block:NoPackages -->
+                        <tr>
+                            <td colspan="4">$Text{"No matches found."}</td>
+                        </tr>
+<!-- dtl:block:NoPackages -->
+<!-- dtl:block:PackageRow -->
+                        <tr>
+                            <td>
+                                $QData{"Name"}
+                            </td>
+                            <td>
+                                $QData{"Version"}
+                            </td>
+                            <td>
+                                $QData{"Desc"}
+                            </td>
+                            <td>
+<!-- dtl:block:ApprovalLink -->
+                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Approve;PackageID=$LQData{"PackageID"}">
+                                    $Text{"approve"}
+                                </a>
+<!-- dtl:block:ApprovalLink -->
+<!-- dtl:block:RevokeLink -->
+                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Revoke;PackageID=$LQData{"PackageID"}">
+                                    $Text{"revoke approval"}
+                                </a>
+<!-- dtl:block:RevokeLink -->
+                            </td>
+                        </tr>
+<!-- dtl:block:PackageRow -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="Clear"></div>
+</div>
