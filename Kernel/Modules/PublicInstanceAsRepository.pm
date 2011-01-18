@@ -70,7 +70,9 @@ sub Run {
         # get repository index
         my $Index = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
         $Index .= "<otrs_package_list version=\"1.0\">\n";
-        my @List = $Self->{RepositoryObject}->RepositoryList();
+        my @List = $Self->{RepositoryObject}->RepositoryList(
+            Distinct => 1,
+        );
 
         OPMPACKAGE:
         for my $Package (@List) {
@@ -114,7 +116,7 @@ sub Run {
             $Version = '';
         }
 
-        my $Package = $Self->{PackageObject}->RepositoryGet(
+        my $Package = $Self->{RepositoryObject}->RepositoryGet(
             Name    => $Name,
             Version => $Version,
         );

@@ -51,6 +51,7 @@ sub Run {
     if ( $Self->{Subaction} eq 'Approve' ) {
         $Self->{RepositoryObject}->PackageApprove(
             PackageID => $PackageID,
+            UserID    => $Self->{UserID},
         );
     }
 
