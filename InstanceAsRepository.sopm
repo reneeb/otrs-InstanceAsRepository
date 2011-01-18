@@ -17,19 +17,24 @@
         <File Permission="644" Location="Kernel/System/InstanceAsRepository.pm"/>
     </Filelist>
     <DatabaseInstall Type="post">
-        <!--
-            add 'approved' column to 'package_repository'. This column has to be a varchar field
-            as this field should be filled with the approved version number. Then we can check
-            if the approved version is equals the installed version. If so, the package appears
-            in the xml, otherwise not.
-        -->
-        <TableAlter Name="package_repository">
-            <ColumnAdd Name="approved" Type="VARCHAR" Size="250" Required="false"/>
-        </TableAlter>
+        <TableCreate Name="instance_package_repository">
+            <Column Name="approved" Type="VARCHAR" Size="250" Required="false"/>
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
+            <Column Name="package_id" Required="true" Type="INTEGER"/>
+            <Column Name="name" Required="true" Size="200" Type="VARCHAR"/>
+            <Column Name="version" Required="true" Size="250" Type="VARCHAR"/>
+            <Column Name="content" Required="true" Type="LONGBLOB"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
+            <ForeignKey ForeignTable="users">
+                <Reference Local="create_by" Foreign="id"/>
+                <Reference Local="change_by" Foreign="id"/>
+            </ForeignKey>
+        </TableCreate>
     </DatabaseInstall>
     <DatabaseUninstall Type="pre">
-        <TableAlter Name="package_repository">
-            <ColumnDrop Name="approved"/>
-        </TableAlter>
+        <TableDrop Name="instance_package_repository" />
     </DatabaseUninstall>
 </otrs_package>
