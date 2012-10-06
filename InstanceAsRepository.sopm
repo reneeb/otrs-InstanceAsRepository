@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
     <Name>InstanceAsRepository</Name>
-    <Version>0.0.0</Version>
+    <Version>0.1.92</Version>
     <Framework>3.0.x</Framework>
-    <Vendor>Renee Baecker, Perl-Services.de</Vendor>
+    <Vendor>Perl-Services.de</Vendor>
     <URL>http://perl-services.de/</URL>
     <License>GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007</License>
     <Description Lang="en">A module to allow an OTRS instance to act as a repository (more flexible as the builtin functionality)</Description>
