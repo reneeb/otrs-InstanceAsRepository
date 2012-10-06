@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otrs_package version="1.0">
     <Name>InstanceAsRepository</Name>
-    <Version>0.1.92</Version>
+    <Version>0.1.93</Version>
     <Framework>3.0.x</Framework>
     <Vendor>Perl-Services.de</Vendor>
     <URL>http://perl-services.de/</URL>
