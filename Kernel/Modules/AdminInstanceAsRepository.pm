@@ -104,10 +104,11 @@ sub Run {
         $Self->{LayoutObject}->Block(
             Name => 'PackageRow',
             Data => {
-                Name    => $Package->{Name}->{Content},
-                Version => $Package->{Version}->{Content},
-                Desc    => $Data{Description},
-                Vendor  => $Package->{Vendor}->{Content},
+                Name      => $Package->{Name}->{Content},
+                Version   => $Package->{Version}->{Content},
+                Desc      => $Data{Description},
+                Vendor    => $Package->{Vendor}->{Content},
+                PackageID => $PackageID,
             },
         );
 
