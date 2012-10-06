@@ -55,6 +55,28 @@ sub Run {
         );
     }
 
+    
+    # ------------------------------------------------------------ #
+    # download package
+    # ------------------------------------------------------------ #
+    elsif ( $Self->{Subaction} eq 'Download' ) {
+        my %Info = $Self->{RepositoryObject}->RepositoryGet(
+            PackageID => $PackageID,
+            Result    => 'INFO',
+        );
+
+        if ( !%Info ) {
+            return $Self->{LayoutObject}->ErrorScreen( Message => 'No such package!' );
+        }
+
+        return $Self->{LayoutObject}->Attachment(
+            Content     => $Info{Package},
+            ContentType => 'application/octet-stream',
+            Filename    => $Info{Name},
+            Type        => 'attachment',
+        );
+    }
+
     # ------------------------------------------------------------ #
     # revoke approval
     # ------------------------------------------------------------ #

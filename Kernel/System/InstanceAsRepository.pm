@@ -338,12 +338,27 @@ get a package from local repository
 sub RepositoryGet {
     my ( $Self, %Param ) = @_;
 
+    if ( $Param{PackageID} ) {
+        my $SQL = 'SELECT name, version FROM instance_package_repository WHERE id = ?';
+
+        $Self->{DBObject}->Prepare(
+            SQL   => $SQL,
+            Bind  => [ \$Param{PackageID} ],
+            Limit => 1,
+        );
+
+        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+            $Param{Name}    = $Row[0],
+            $Param{Version} = $Row[1],
+        }
+    }
+
     # check needed stuff
-    for (qw(Name Version)) {
-        if ( !defined $Param{$_} ) {
+    for my $Needed (qw(Name Version)) {
+        if ( !defined $Param{$Needed} ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
-                Message => "$_ not defined!",
+                Message => "$Needed not defined!",
             );
             return;
         }
@@ -366,7 +381,13 @@ sub RepositoryGet {
         return;
     }
 
-    if ( $Param{Result} && $Param{Result} eq 'SCALAR' ) {
+    if ( $Param{Result} && $Param{Result} eq 'INFO' ) {
+        return (
+            Package => $Package,
+            Name    => sprintf( "%s-%s.opm", $Param{Name}, $Param{Version} ),
+        );
+    }
+    elsif ( $Param{Result} && $Param{Result} eq 'SCALAR' ) {
         return \$Package;
     }
 

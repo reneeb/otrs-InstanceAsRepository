@@ -41,7 +41,9 @@
                                 $QData{"Name"}
                             </td>
                             <td>
-                                $QData{"Version"}
+                                <a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Download;PackageID=$LQData{"PackageID"}">
+                                    $QData{"Version"}
+                                </a>
                             </td>
                             <td>
                                 $QData{"Desc"}
