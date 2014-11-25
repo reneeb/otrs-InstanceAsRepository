@@ -1,0 +1,47 @@
+{
+    "name": "InstanceAsRepository",
+    "version": "3.3.1",
+    "framework": [
+        "3.0.x",
+        "3.1.x",
+        "3.2.x",
+        "3.3.x"
+    ],
+    "vendor": {
+        "name":  "Perl-Services.de",
+        "url": "http://www.perl-services.de"
+    },
+    "license": "GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007",
+    "description" : {
+        "en": "A module to allow an OTRS instance to act as a repository (more flexible as the builtin functionality)",
+        "de": "Ein Modul, um eine OTRS-Instanz als Repository zu betreiben (flexibler als die eingebaute Funktionalität)."
+    },
+    "database" : [
+       {
+            "type": "TableCreate",
+            "version": 0,
+            "name": "instance_package_repository",
+            "columns": [
+                { "name": "approved", "required": "false", "type": "VARCHAR", "size": 250 },
+                { "name": "id", "required": "true", "auto_increment": "true", "type": "INTEGER", "primary_key": "true" },
+                { "name": "package_id", "required": "true", "type": "INTEGER" },
+                { "name": "name", "required": "true", "type": "VARCHAR", "size": 200 },
+                { "name": "version", "required": "true", "type": "VARCHAR", "size": 250 },
+                { "name": "content", "required": "true", "type": "LONGBLOB" },
+                { "name": "create_time", "required": "true", "type": "DATE" },
+                { "name": "create_by", "required": "true", "type": "INTEGER" },
+                { "name": "change_time", "required": "true", "type": "DATE" },
+                { "name": "change_by", "required": "true", "type": "INTEGER" }
+            ],
+            "keys" : [
+                {
+                    "name": "system_user",
+                    "references": [
+                        { "local": "create_by", "foreign": "id" },
+                        { "local": "change_by", "foreign": "id" }
+                    ]
+                }
+            ]
+        }
+    ]
+}
