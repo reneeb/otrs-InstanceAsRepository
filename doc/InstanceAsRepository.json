@@ -1,6 +1,6 @@
 {
     "name": "InstanceAsRepository",
-    "version": "3.3.1",
+    "version": "3.3.2",
     "framework": [
         "3.0.x",
         "3.1.x",
@@ -35,7 +35,7 @@
             ],
             "keys" : [
                 {
-                    "name": "system_user",
+                    "name": "users",
                     "references": [
                         { "local": "create_by", "foreign": "id" },
                         { "local": "change_by", "foreign": "id" }
