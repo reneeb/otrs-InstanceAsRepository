@@ -1,8 +1,6 @@
 # --
 # Kernel/Modules/PublicInstanceAsRepository.pm - provides a local repository
-# Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
-# --
-# $Id: PublicInstanceAsRepository.pm,v 1.12 2009/02/16 11:20:53 tr Exp $
+# Copyright (C) 2014 Perl-Services.de, http://perl-services.de
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,11 +12,15 @@ package Kernel::Modules::PublicInstanceAsRepository;
 use strict;
 use warnings;
 
-use Kernel::System::Package;
-use Kernel::System::InstanceAsRepository;
+our @ObjectDependencies = qw(
+    Kernel::Config
+    Kernel::Output::HTML::Layout
+    Kernel::System::Web::Request
+    Kernel::System::Package
+    Kernel::System::InstanceAsRepository
+);
 
-use vars qw($VERSION);
-$VERSION = qw($Revision: 1.12 $) [1];
+our $VERSION = 0.01;
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -27,30 +29,25 @@ sub new {
     my $Self = {%Param};
     bless( $Self, $Type );
 
-    # check needed objects
-    for my $NeededObject (qw(ParamObject LayoutObject LogObject ConfigObject MainObject)) {
-        if ( !$Self->{$NeededObject} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $NeededObject!" );
-        }
-    }
-
-    # create needed objects
-    $Self->{PackageObject}    = Kernel::System::Package->new(%Param);
-    $Self->{RepositoryObject} = Kernel::System::InstanceAsRepository->new(%Param);
-
     return $Self;
 }
 
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my $File = $Self->{ParamObject}->GetParam( Param => 'File' ) || '';
+    my $ParamObject      = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $RepositoryObject = $Kernel::OM->Get('Kernel::System::InstanceAsRepository');
+    my $LayoutObject     = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ConfigObject     = $Kernel::OM->Get('Kernel::Config');
+    my $PackageObject    = $Kernel::OM->Get('Kernel::System::Package');
+
+    my $File = $ParamObject->GetParam( Param => 'File' ) || '';
     $File =~ s/^\///g;
 
-    my $AccessControlIPs = $Self->{ConfigObject}->Get('Package::RepositoryAccessIPs');
+    my $AccessControlIPs = $ConfigObject->Get('Package::RepositoryAccessIPs');
 
     if ( !$AccessControlIPs ) {
-        return $Self->{LayoutObject}->ErrorScreen(
+        return $LayoutObject->ErrorScreen(
             Message => 'Need config Package::RepositoryAccessIPs',
         );
     }
@@ -59,7 +56,7 @@ sub Run {
     
     my $HasAccess = grep{ $ENV{REMOTE_ADDR} eq $_ }@{$AccessControlIPs};
     if ( !$HasAccess ) {
-        return $Self->{LayoutObject}->ErrorScreen(
+        return $LayoutObject->ErrorScreen(
             Message => "Authentication failed from $ENV{REMOTE_ADDR}!",
         );
     }
@@ -70,7 +67,7 @@ sub Run {
         # get repository index
         my $Index = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
         $Index .= "<otrs_package_list version=\"1.0\">\n";
-        my @List = $Self->{RepositoryObject}->RepositoryList(
+        my @List = $RepositoryObject->RepositoryList(
             Distinct => 1,
         );
 
@@ -82,13 +79,13 @@ sub Run {
 
             $Index .= "<Package>\n";
             $Index .= "  <File>$Package->{Name}->{Content}-$Package->{Version}->{Content}</File>\n";
-            $Index .= $Self->{PackageObject}->PackageBuild( %{$Package}, Type => 'Index' );
+            $Index .= $PackageObject->PackageBuild( %{$Package}, Type => 'Index' );
             $Index .= "</Package>\n";
         }
 
         $Index .= "</otrs_package_list>\n";
 
-        return $Self->{LayoutObject}->Attachment(
+        return $LayoutObject->Attachment(
             Type        => 'inline',     # inline|attachment
             Filename    => 'otrs.xml',
             ContentType => 'text/xml',
@@ -106,7 +103,7 @@ sub Run {
             $Version = $2;
         }
 
-        my $IsApproved = $Self->{RepositoryObject}->PackageIsApproved(
+        my $IsApproved = $RepositoryObject->PackageIsApproved(
             Name => $Name,
             Version => $Version,
         );
@@ -116,12 +113,12 @@ sub Run {
             $Version = '';
         }
 
-        my $Package = $Self->{RepositoryObject}->RepositoryGet(
+        my $Package = $RepositoryObject->RepositoryGet(
             Name    => $Name,
             Version => $Version,
         );
 
-        return $Self->{LayoutObject}->Attachment(
+        return $LayoutObject->Attachment(
             Type        => 'inline',           # inline|attachment
             Filename    => "$Name-$Version",
             ContentType => 'text/xml',

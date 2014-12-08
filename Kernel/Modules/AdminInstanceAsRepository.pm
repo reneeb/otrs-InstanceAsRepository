@@ -1,8 +1,6 @@
 # --
 # Kernel/Modules/AdminInstanceAsRepository.pm - manage software packages
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
-# --
-# $Id: AdminInstanceAsRepository.pm,v 1.96 2010/09/23 08:44:35 mb Exp $
+# Copyright (C) 2014 Perl-Services.de, http://perl-services.de
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,11 +12,15 @@ package Kernel::Modules::AdminInstanceAsRepository;
 use strict;
 use warnings;
 
-use Kernel::System::Package;
-use Kernel::System::InstanceAsRepository;
+our @ObjectDependencies = qw(
+    Kernel::Config
+    Kernel::Output::HTML::Layout
+    Kernel::System::Web::Request
+    Kernel::System::Package
+    Kernel::System::InstanceAsRepository
+);
 
-use vars qw($VERSION);
-$VERSION = qw($Revision: 1.96 $) [1];
+our $VERSION = 0.01;
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -27,29 +29,23 @@ sub new {
     my $Self = {%Param};
     bless( $Self, $Type );
 
-    # check needed objects
-    for my $Needed (qw(ParamObject DBObject LayoutObject LogObject ConfigObject MainObject)) {
-        if ( !$Self->{$Needed} ) {
-            $Self->{LayoutObject}->FatalError( Message => "Got no $Needed!" );
-        }
-    }
-
-    $Self->{PackageObject}    = Kernel::System::Package->new(%Param);
-    $Self->{RepositoryObject} = Kernel::System::InstanceAsRepository->new(%Param);
-
     return $Self;
 }
 
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my $PackageID = $Self->{ParamObject}->GetParam( Param => 'PackageID' );
+    my $ParamObject      = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $RepositoryObject = $Kernel::OM->Get('Kernel::System::InstanceAsRepository');
+    my $LayoutObject     = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $PackageID = $ParamObject->GetParam( Param => 'PackageID' );
 
     # ------------------------------------------------------------ #
     # approve package
     # ------------------------------------------------------------ #
     if ( $Self->{Subaction} eq 'Approve' ) {
-        $Self->{RepositoryObject}->PackageApprove(
+        $RepositoryObject->PackageApprove(
             PackageID => $PackageID,
             UserID    => $Self->{UserID},
         );
@@ -60,16 +56,16 @@ sub Run {
     # download package
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Download' ) {
-        my %Info = $Self->{RepositoryObject}->RepositoryGet(
+        my %Info = $RepositoryObject->RepositoryGet(
             PackageID => $PackageID,
             Result    => 'INFO',
         );
 
         if ( !%Info ) {
-            return $Self->{LayoutObject}->ErrorScreen( Message => 'No such package!' );
+            return $LayoutObject->ErrorScreen( Message => 'No such package!' );
         }
 
-        return $Self->{LayoutObject}->Attachment(
+        return $LayoutObject->Attachment(
             Content     => $Info{Package},
             ContentType => 'application/octet-stream',
             Filename    => $Info{Name},
@@ -81,16 +77,16 @@ sub Run {
     # revoke approval
     # ------------------------------------------------------------ #
     elsif ( $Self->{Subaction} eq 'Revoke' ) {
-        $Self->{RepositoryObject}->PackageRevoke(
+        $RepositoryObject->PackageRevoke(
             PackageID => $PackageID,
         );
     }
 
-    my @Packages = $Self->{RepositoryObject}->RepositoryList();
+    my @Packages = $RepositoryObject->RepositoryList();
 
     # if there are no local packages to show, a msg is displayed
     if ( !@Packages ) {
-        $Self->{LayoutObject}->Block(
+        $LayoutObject->Block(
             Name => 'NoPackages',
             Data => {},
         );
@@ -101,7 +97,7 @@ sub Run {
 
         my %Data = $Self->_MessageGet( Info => $Package->{Description} );
 
-        $Self->{LayoutObject}->Block(
+        $LayoutObject->Block(
             Name => 'PackageRow',
             Data => {
                 Name      => $Package->{Name}->{Content},
@@ -113,7 +109,7 @@ sub Run {
         );
 
         if ( !$Package->{Approved}->{Content} ) {
-            $Self->{LayoutObject}->Block(
+            $LayoutObject->Block(
                 Name => 'ApprovalLink',
                 Data => {
                     PackageID => $PackageID,
@@ -121,7 +117,7 @@ sub Run {
             );
         }
         else {
-            $Self->{LayoutObject}->Block(
+            $LayoutObject->Block(
                 Name => 'RevokeLink',
                 Data => {
                     PackageID => $PackageID,
@@ -131,17 +127,19 @@ sub Run {
 
     }
 
-    my $Output = $Self->{LayoutObject}->Header();
-    $Output .= $Self->{LayoutObject}->NavigationBar();
-    $Output .= $Self->{LayoutObject}->Output(
+    my $Output = $LayoutObject->Header();
+    $Output .= $LayoutObject->NavigationBar();
+    $Output .= $LayoutObject->Output(
         TemplateFile => 'AdminInstanceAsRepository',
     );
-    $Output .= $Self->{LayoutObject}->Footer();
+    $Output .= $LayoutObject->Footer();
     return $Output;
 }
 
 sub _MessageGet {
     my ( $Self, %Param ) = @_;
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     my $Title       = '';
     my $Description = '';
@@ -163,7 +161,7 @@ sub _MessageGet {
                 ( $Self->{UserLanguage} && $Tag->{Lang} eq $Self->{UserLanguage} )
                 || (
                     !$Self->{UserLanguage}
-                    && $Tag->{Lang} eq $Self->{ConfigObject}->Get('DefaultLanguage')
+                    && $Tag->{Lang} eq $ConfigObject->Get('DefaultLanguage')
                 )
                 )
             {
