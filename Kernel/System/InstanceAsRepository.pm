@@ -1,8 +1,6 @@
 # --
 # Kernel/System/InstanceAsRepository.pm - lib package manager
-# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
-# --
-# $Id: InstanceAsRepository.pm,v 1.119 2010/09/23 08:44:35 mb Exp $
+# Copyright (C) 2014 Perl-Services.de, http://perl-services.de
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -14,10 +12,13 @@ package Kernel::System::InstanceAsRepository;
 use strict;
 use warnings;
 
-use Kernel::System::Package;
+our @ObjectDependencies = qw(
+    Kernel::System::Log
+    Kernel::System::DB
+    Kernel::System::Package
+);
 
-use vars qw($VERSION $S);
-$VERSION = qw($Revision: 1.119 $) [1];
+our $VERSION = 0.01;
 
 =head1 NAME
 
@@ -37,46 +38,6 @@ All functions to manage application packages/modules.
 
 create an object
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Time;
-    use Kernel::System::InstanceAsRepository;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $InstanceAsRepositoryObject = Kernel::System::InstanceAsRepository->new(
-        LogObject    => $LogObject,
-        ConfigObject => $ConfigObject,
-        TimeObject   => $TimeObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
-        MainObject   => $MainObject,
-    );
-
 =cut
 
 sub new {
@@ -85,14 +46,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for my $Object (qw(DBObject ConfigObject LogObject TimeObject MainObject EncodeObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
-    }
-
-    # create needed objects
-    $Self->{PackageObject} = Kernel::System::Package->new( %{$Self} );
 
     return $Self;
 }
@@ -111,9 +64,12 @@ checks if a given package is approved.
 sub PackageIsApproved {
     my ( $Self, %Param ) = @_;
 
+    my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
+    my $DBObject  = $Kernel::OM->Get('Kernel::System::DB');
+
     for my $Needed (qw(Name Version)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $LogObject->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!",
             );
@@ -121,14 +77,14 @@ sub PackageIsApproved {
         }
     }
 
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL  => 'SELECT approved FROM instance_package_repository '
             . 'WHERE name = ? AND version = ? AND approved = version',
         Bind => [ \$Param{Name}, \$Param{Version} ],
     );
 
     my $IsApproved;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $IsApproved = $Row[0];
     }
 
@@ -146,7 +102,11 @@ returns a list of repository packages
 sub RepositoryList {
     my ( $Self, %Param ) = @_;
 
-    return if !$Self->{DBObject}->Prepare(
+    my $LogObject     = $Kernel::OM->Get('Kernel::System::Log');
+    my $DBObject      = $Kernel::OM->Get('Kernel::System::DB');
+    my $PackageObject = $Kernel::OM->Get('Kernel::System::Package');
+
+    return if !$DBObject->Prepare(
         SQL => 'SELECT pr.id, pr.name, pr.version, pr.approved, pr.content '
             . 'FROM instance_package_repository pr '
             . 'ORDER BY pr.name, pr.create_time',
@@ -154,7 +114,7 @@ sub RepositoryList {
 
     my %PackagesSeen;
     my @Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         my $IsApproved = ( $Row[3] && $Row[3] eq $Row[2] ) ? $Row[3] : 0;
         my %Info = (
             PackageID => $Row[0],
@@ -169,13 +129,13 @@ sub RepositoryList {
         push @Data, \%Info;
     }
 
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => 'SELECT pr.id, pr.name, pr.version, pr.content '
             . 'FROM package_repository pr '
             . 'ORDER BY pr.name, pr.create_time',
     );
 
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         next if $PackagesSeen{ $Row[1] . '-' . $Row[2] };
         my %Info = (
             PackageID => $Row[0],
@@ -203,7 +163,7 @@ sub RepositoryList {
             my $Approved  = $Entity->{Approved}->{Content};
             my $PackageID = $Entity->{PackageID};
 
-            my %Structure = $Self->{PackageObject}->PackageParse(
+            my %Structure = $PackageObject->PackageParse(
                 String => \$Entity->{Content}->{Content},
             );
 
@@ -237,10 +197,13 @@ approve a package from local repository
 sub PackageApprove {
     my ( $Self, %Param ) = @_;
 
+    my $LogObject     = $Kernel::OM->Get('Kernel::System::Log');
+    my $DBObject      = $Kernel::OM->Get('Kernel::System::DB');
+
     # check needed stuff
     for my $Needed (qw(PackageID UserID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $LogObject->Log(
                 Priority => 'error',
                 Message => "Need $Needed",
             );
@@ -248,14 +211,14 @@ sub PackageApprove {
         }
     }
 
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL   => 'SELECT name, version, content FROM package_repository WHERE id = ?',
         Bind  => [ \$Param{PackageID} ],
         Limit => 1,
     );
 
     my %Info;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         %Info = (
             Name    => $Row[0],
             Version => $Row[1],
@@ -271,7 +234,7 @@ sub PackageApprove {
     );
 
     # db access
-    return $Self->{DBObject}->Do(
+    return $DBObject->Do(
         SQL => 'INSERT INTO instance_package_repository ( approved, name, version, content, '
             . 'package_id, create_time, create_by, change_time, change_by ) '
             . 'VALUES (?,?,?,?,?,current_timestamp,?,current_timestamp,?)',
@@ -300,10 +263,13 @@ revoke approval of a package from local repository
 sub PackageRevoke {
     my ( $Self, %Param ) = @_;
 
+    my $LogObject     = $Kernel::OM->Get('Kernel::System::Log');
+    my $DBObject      = $Kernel::OM->Get('Kernel::System::DB');
+
     # check needed stuff
     for my $Needed (qw(PackageID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $LogObject->Log(
                 Priority => 'error',
                 Message => "Need $Needed",
             );
@@ -312,7 +278,7 @@ sub PackageRevoke {
     }
 
     # db access
-    return $Self->{DBObject}->Do(
+    return $DBObject->Do(
         SQL => 'DELETE FROM instance_package_repository WHERE id = ?',
         Bind => [ \$Param{PackageID} ],
     );
@@ -338,16 +304,19 @@ get a package from local repository
 sub RepositoryGet {
     my ( $Self, %Param ) = @_;
 
+    my $LogObject     = $Kernel::OM->Get('Kernel::System::Log');
+    my $DBObject      = $Kernel::OM->Get('Kernel::System::DB');
+
     if ( $Param{PackageID} ) {
         my $SQL = 'SELECT name, version FROM instance_package_repository WHERE id = ?';
 
-        $Self->{DBObject}->Prepare(
+        $DBObject->Prepare(
             SQL   => $SQL,
             Bind  => [ \$Param{PackageID} ],
             Limit => 1,
         );
 
-        while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        while ( my @Row = $DBObject->FetchrowArray() ) {
             $Param{Name}    = $Row[0],
             $Param{Version} = $Row[1],
         }
@@ -356,7 +325,7 @@ sub RepositoryGet {
     # check needed stuff
     for my $Needed (qw(Name Version)) {
         if ( !defined $Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $LogObject->Log(
                 Priority => 'error',
                 Message => "$Needed not defined!",
             );
@@ -365,16 +334,16 @@ sub RepositoryGet {
     }
 
     # db access
-    $Self->{DBObject}->Prepare(
+    $DBObject->Prepare(
         SQL => 'SELECT content FROM instance_package_repository WHERE name = ? AND version = ?',
         Bind => [ \$Param{Name}, \$Param{Version} ],
     );
     my $Package = '';
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $Package = $Row[0];
     }
     if ( !$Package ) {
-        $Self->{LogObject}->Log(
+        $LogObject->Log(
             Priority => 'notice',
             Message  => "No such package $Param{Name}-$Param{Version}!",
         );
@@ -401,16 +370,8 @@ sub RepositoryGet {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTRS project (L<http://otrs.org/>).
-
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
 did not receive this file, see L<http://www.gnu.org/licenses/agpl.txt>.
-
-=cut
-
-=head1 VERSION
-
-$Revision: 1.119 $ $Date: 2010/09/23 08:44:35 $
 
 =cut
