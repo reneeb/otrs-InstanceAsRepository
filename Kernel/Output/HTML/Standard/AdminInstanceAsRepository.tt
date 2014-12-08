@@ -1,0 +1,71 @@
+# --
+# AdminInstanceAsRepository.tt - provides HTML form for AdminInstanceAsRepository
+# Copyright (C) 2001-2010 OTRS AG, http://otrs.org/
+# --
+# $Id: AdminInstanceAsRepository.dtl,v 1.21 2010/08/11 10:56:29 mg Exp $
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (AGPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+# --
+
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1>[% Translate("Repository Management") | html %]</h1>
+    <div class="SidebarColumn">
+    </div>
+
+    <div class="ContentColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>[% Translate("List") | html %]</h2>
+            </div>
+            <div class="Content">
+                <table class="DataTable" id="Packages">
+                    <thead>
+                        <tr>
+                            <th>[% Translate("Package Name") | html %]</th>
+                            <th>[% Translate("Version") | html %]</th>
+                            <th>[% Translate("Description") | html %]</th>
+                            <th>[% Translate("Action") | html %]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+[% RenderBlockStart("NoPackages") %]
+                        <tr>
+                            <td colspan="4">[% Translate("No matches found.") | html %]</td>
+                        </tr>
+[% RenderBlockEnd("NoPackages") %]
+[% RenderBlockStart("PackageRow") %]
+                        <tr>
+                            <td>
+                                [% Data.Name | html %]
+                            </td>
+                            <td>
+                                <a class="AsBlock" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=Download;PackageID=[% Data.PackageID | uri %]">
+                                    [% Data.Version | html %]
+                                </a>
+                            </td>
+                            <td>
+                                [% Data.Desc | html %]
+                            </td>
+                            <td>
+[% RenderBlockStart("ApprovalLink") %]
+                                <a class="AsBlock" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=Approve;PackageID=[% Data.PackageID | uri %]">
+                                    [% Translate("approve") | html %]
+                                </a>
+[% RenderBlockEnd("ApprovalLink") %]
+[% RenderBlockStart("RevokeLink") %]
+                                <a class="AsBlock" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=Revoke;PackageID=[% Data.PackageID | uri %]">
+                                    [% Translate("revoke approval") | html %]
+                                </a>
+[% RenderBlockEnd("RevokeLink") %]
+                            </td>
+                        </tr>
+[% RenderBlockEnd("PackageRow") %]
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="Clear"></div>
+</div>
