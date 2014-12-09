@@ -1,0 +1,22 @@
+=head1 NAME
+
+InstanceAsRepository
+
+=head1 DESCRIPTION
+
+If you have several OTRS instances like "testing", "staging" and "live" where "testing" is the instance for developer, "staging" for QA and "live" for public, InstanceAsRepository can be a great module for you. You can configure "testing" to be a module repository for "staging" and "staging" as a module repository for "live".
+
+When you install a new module on "testing" with version 3.3.1 and your testing were fine, you can approve that module. From now on the "staging" instance can see that module in the Package Manager. When you install 3.3.2 on "testing", "staging" can still see only 3.3.1 until you approve 3.3.2. When you find an error in 3.3.2 before you installed in on "staging", you can revoke the approval and "staging" can only see 3.3.1 then.
+
+=head1 REPOSITORY & BUGTRACKER
+
+The code repository and a bugtracker are available at L<http://github.com/reneeb/otrs-InstanceAsRepository>.
+
+=head1 AUTHOR & LICENSE
+
+This add on is licensed under the terms of
+
+  APGL 3
+
+Renee Baecker, C<< <info@feature-addons.de> >>
+
